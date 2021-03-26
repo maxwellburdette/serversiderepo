@@ -31,11 +31,31 @@
 
             //DROP table if it already exists
             $sql = "DROP DATABASE IF EXISTS " . DATABASE_NAME;
-            runQuery($sql, "Deleted previous DB", true);
+            runQuery($sql, "Deleted previous DB", false);
+            createDatabase();
             //Create our database
             function createDatabase()
             {
+                global $conn;
+                $sql = "CREATE DATABASE IF NOT EXISTS " . DATABASE_NAME;
+                runQuery($sql, "Creating " . DATABASE_NAME, false);
 
+                //Select newly created database
+                $conn->select_db(DATABASE_NAME);
+
+                /*
+                 * Create tables 
+                 */
+
+                //Create Table: Products
+                $sql = "CREATE TABLE IF NOT EXISTS product (
+                    productID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    productName VARCHAR(20) NOT NULL,
+                    color VARCHAR(20) NOT NULL,
+                    price decimal(18,2) NOT NULL,
+                    quantity INT
+                    )";
+                runQuery($sql, "Creating products ", true);
             }
 
             function populateTable()
@@ -54,7 +74,7 @@
                 // run the query
                 if ($conn->query($sql) === TRUE) {
                    if($echoSuccess) {
-                      echo $msg . " successful.<br />";
+                      echo $msg . "<br />";
                    }
                  } 
                  else {
