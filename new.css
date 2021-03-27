@@ -1,16 +1,18 @@
 body {
 	margin: 1;
 	padding: 0;
-	display: block;
+	overflow-x: hidden;
 }
 
-h1 {
+h1,
+h2 {
 	text-align: center;
 }
 
 table {
 	border: 4px solid #000080;
-	width: 100%;
+	width: 50%;
+	margin: 0 auto;
 }
 
 td,
@@ -30,4 +32,11 @@ tr {
 /* zebra stripe the table */
 tr:nth-child(even) {
 	background: #f2f0ff; /* pale blue */
+}
+
+.container {
+	width: 100%;
+	margin: auto;
+	justify-content: center;
+	align-items: center;
 }

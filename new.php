@@ -39,14 +39,28 @@
             //Function to populate same data in tables
             populateTables();
 
+            //Display product table
             $productHead = array("Product Name", "Color", "Price", "Quantity", "Product Page");
             $tableTitle = "Product Data";
-            displayTable($productHead, $tableTitle);
+            $sql = "SELECT productName, color, price, quantity, productPage
+            FROM product";
+            $result = $conn->query($sql);
+            displayTable($productHead, $tableTitle, $result);
 
+            //Display department table
             $departmentHead = array("Department", "Department Manager");
             $departmentTitle = "Department Data";
+            $sql = "SELECT departmentName, departmentManager FROM department";
+            $result = $conn->query($sql);
             //Display tables of data
-            displayTable($departmentHead, $departmentTitle);
+            displayTable($departmentHead, $departmentTitle, $result);
+
+            //Display manufacturer tables
+            $manufacturerArray = array("Manufacturer", "Website");
+            $manufacturerTitle = "Manufacturer Data";
+            $sql = "SELECT manufactureName, manufactureWebsite FROM manufacturer";
+            $result = $conn->query($sql);
+            displayTable($manufacturerArray, $manufacturerTitle, $result);
 
 
 
@@ -55,7 +69,7 @@
             {
                 global $conn;
                 $sql = "CREATE DATABASE IF NOT EXISTS " . DATABASE_NAME;
-                runQuery($sql, "Creating " . DATABASE_NAME, false);
+                runQuery($sql, "Creating " . DATABASE_NAME, true);
 
                 //Select newly created database
                 $conn->select_db(DATABASE_NAME);
@@ -75,23 +89,23 @@
                     manufacturerID INT,
                     departmentID INT
                     )";
-                runQuery($sql, "Creating products ", true);
+                runQuery($sql, "Creating products... ", true);
 
                 //Create Table: department
                 $sql = "CREATE TABLE IF NOT EXISTS department (
-                    productID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    departmentID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     departmentName VARCHAR(15) NOT NULL,
                     departmentManager VARCHAR(15)
                     )";
-                runQuery($sql, "Creating department", true);
+                runQuery($sql, "Creating departments...", true);
 
                 //Create Table: manufacturer
                 $sql = "CREATE TABLE IF NOT EXISTS manufacturer (
-                    manufacturer INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    manufacturerID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     manufactureName VARCHAR(20) NOT NULL,
                     manufactureWebsite VARCHAR(65) NOT NULL
                 )";
-                runQuery($sql, "Creating manufacturer", true);
+                runQuery($sql, "Creating manufacturers...", true);
             }
 
             function populateTables()
@@ -109,12 +123,13 @@
                     array("Storage Jar", "Clear", 5.99, 18, "http://MyStore.com/storagejar.php", 2, 2),
                     array("Firm Pillow", "White", 12.99, 24, "http://MyStore.com/pillow.php", 1, 3),
                     array("Comforter", "White", 34.99, 12, "http://MyStore.com/comforter.php", 3, 3),
-                    array("Rollaway Bed", "Black", 249.99, 3, "http://Mystore.com/rollaway.php", 3, 3)
+                    array("Rollaway Bed", "Black", 249.99, 3, "http://Mystore.com/rollaway.php", 3, 3),
+                    array("Name Badge", "Black", 0, 99, "http://Mystore.com/namebadge.php", 4, 4)
 
                 );
                 foreach($productArray as $product)
                 {
-                    echo $product[0] . " " . $product[1] . "<br />";
+                    //echo $product[0] . " " . $product[1] . "<br />";
                     $sql = "INSERT INTO product (productName, color, price, quantity, productPage, manufacturerID, departmentID) "
                         . "VALUES ('" . $product[0] . "', '" 
                         . $product[1] . "', '" 
@@ -134,7 +149,7 @@
                 );
                 foreach($departmentArray as $department)
                 {
-                    echo "Department: " . $department[0] . ", Manager: " . $department[1] . "<br />";
+                    //echo "Department: " . $department[0] . ", Manager: " . $department[1] . "<br />";
                     $sql = "INSERT INTO department (departmentName, departmentManager) "
                         . "VALUES ('" . $department[0] . "', '"
                         . $department[1] . "')";
@@ -149,7 +164,7 @@
                 );
                 foreach($manufacturerArray as $manufacturer)
                 {
-                    echo "Manufacturer: " . $manufacturer[0] . "<br />";
+                    //echo "Manufacturer: " . $manufacturer[0] . "<br />";
                     $sql = "INSERT INTO manufacturer (manufactureName, manufactureWebsite) "
                         . " VALUES ('" . $manufacturer[0] . "', '" 
                         . $manufacturer[1] . "')";
@@ -157,7 +172,7 @@
                 }
             }
 
-            function displayTable($tableHead, $title)
+            function displayTable($tableHead, $title, $result)
             {
                 echo "<h2>".$title."</h2>";
 		        echo '<table>';
@@ -166,7 +181,19 @@
                 {
                     echo "<th>".$value."</th>";
                 }
-                echo '</tr> <br />';
+                while($row = $result->fetch_assoc()) {
+                    //print_r($row);
+                    //echo "<br />";
+                    echo "<tr>\n";
+                    // print data
+                    foreach($row as $key=>$value) {
+                    echo "<td>" . $value . "</td>\n";
+                    }
+                    echo "</tr>\n";
+                }
+                echo '</tr>';
+                echo "</table>";
+                echo '<br />';
             }
 
             function runQuery($sql, $msg, $echoSuccess) {
