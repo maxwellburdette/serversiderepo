@@ -39,8 +39,14 @@
             //Function to populate same data in tables
             populateTables();
 
+            $productHead = array("Product Name", "Color", "Price", "Quantity", "Product Page");
+            $tableTitle = "Product Data";
+            displayTable($productHead, $tableTitle);
+
+            $departmentHead = array("Department", "Department Manager");
+            $departmentTitle = "Department Data";
             //Display tables of data
-            displayTable();
+            displayTable($departmentHead, $departmentTitle);
 
 
 
@@ -151,20 +157,16 @@
                 }
             }
 
-            function displayTable()
+            function displayTable($tableHead, $title)
             {
-                //Display product table
-                $tableTitle = "Product List";
-                echo "<h2>" . $tableTitle . "</h2>";
+                echo "<h2>".$title."</h2>";
 		        echo '<table>';
 		        echo '<tr>';
-		        echo '<th>Product Name</th>';
-		        echo '<th>Color</th>';
-		        echo '<th>Price</th>';
-                echo '<th>Quantity</th>';
-                echo '<th>Product Page</th>';
-                echo '<th>Department</th>';
-		        echo '</tr>';
+                foreach($tableHead as $value)
+                {
+                    echo "<th>".$value."</th>";
+                }
+                echo '</tr> <br />';
             }
 
             function runQuery($sql, $msg, $echoSuccess) {
