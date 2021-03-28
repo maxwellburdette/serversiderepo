@@ -1,3 +1,9 @@
+<!-- 
+    File: dbfCreate.php (Web page to create new database and tables. Populate table data and display it)
+    Server Side Development / Project: Crud
+    Maxwell Burdette / burdettm@csp.edu
+    03/27/2021
+ -->
 <!DOCTYPE html>
 <html>
     <head>
@@ -6,297 +12,209 @@
         <title></title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="dbf.css">
     </head>
     <body>
-        <h1>Sun Run Create Test Page</h1>
+        <h1>Create Store Database </h1>
         <?PHP
-
-   
             // Set up connection constants
             define("SERVER_NAME","localhost");
             define("DBF_USER_NAME", "root");
             define("DBF_PASSWORD", "mysql");
-            define("DATABASE_NAME", "sunRun");
+            define("DATABASE_NAME", "storedatabase");
             // Using default username and password for AMPPS  
 
             // Create connection object
             $conn = new mysqli(SERVER_NAME, DBF_USER_NAME, DBF_PASSWORD);
-            // Start with a new database to start primary keys at 1
-            $sql = "DROP DATABASE " . DATABASE_NAME;
-            runQuery($sql, "DROP " . DATABASE_NAME, true);
-            
             // Check connection
             if ($conn->connect_error) {
                 die("Connection failed: " . $conn->connect_error);
             }
 
+            //DROP table if it already exists
+            $sql = "DROP DATABASE IF EXISTS " . DATABASE_NAME;
+            runQuery($sql, "Deleted previous DB", false);
+
+            //Function to create new database
             createDatabase();
 
-            /***************************************************
-            * Populate Tables Using Sample Data
-            * This data will later be collected using a form.
-             ***************************************************/
-            // Populate Table:runner
-            // $sql = "INSERT INTO runner (fName, lName, gender, phone) "
-            //     . "VALUES('Johnny', 'Hayes', 'male', '1234567890')";
-            //runQuery($sql, "New record", false);
-            $runnerArray = array(
-                array("Johnny", "Hayes", "male", "1234567890"),
-                array("Robert", "Fowler", "male","2234567890"),
-                array("James", "Clark", "male","3234567890"),
-                array("Marie-Louise", "Ledru", 'female',"4234567890")
-                );
-             
-            foreach($runnerArray as $runner) {   
-                echo $runner[0] . " " . $runner[1] . "<br />";
-                $sql = "INSERT INTO runner (fName, lName, gender, phone) "
-                    . "VALUES ('" . $runner[0] . "', '" 
-                    . $runner[1] . "', '" 
-                    . $runner[2] . "', '"
-                    . $runner[3] . "')";
-                runQuery($sql, "Record inserted for: " . $runner[1], false);
-             }
+            //Function to populate same data in tables
+            populateTables();
 
-            // Populate Table:race
-            $raceArray = array(
-                array("10K", 46),
-                array("5K", 46),
-                array("Marathon", 85),
-                array("Half Marathon", 75)
-            );
-
-            foreach($raceArray as $race) {
-                $sql = "INSERT INTO race (id_race, raceName, entranceFee) "
-                    . "VALUES (NULL, '" . $race[0] . "', '" 
-                    . $race[1] . "')";
-                    
-                //echo "\$sql string is: " . $sql . "<br />";
-                runQuery($sql, "New record insert $race[1]", false);
-            }
-
-            // Populate Table:sponsor
-            $sponsorArray = array(
-                array("Nike",  2),
-                array("Western Hospital", 3),
-                array("House of Heroes", 4)
-                );
-                
-            foreach($sponsorArray as $sponsor) {
-                $sql = "INSERT INTO sponsor (id_sponsor, sponsorName, id_runner) "
-                    . "VALUES (NULL, '" . $sponsor[0] . "', '" 
-                    . $sponsor[1] . "')";
-                    
-                //echo "\$sql string is: " . $sql . "<br />";
-                runQuery($sql, "New record insert $sponsor[0]", false);
-            }
-
-            // Add a sponsor that is not yet sponsoring a runner.
-            $sql = "INSERT INTO sponsor (id_sponsor, sponsorName, id_runner) "
-                . "VALUES (NULL, 'Wells Fargo Bank', NULL)";
-            runQuery($sql, "New record insert Wells Fargo", false);
-
-            // Populate Table:runner_race
-            // Determine id_runner for Robert Fowler
-            $sql = "SELECT id_runner FROM runner WHERE fName='Robert' AND lName='Fowler'";
+            //Display product table
+            $productHead = array("Product Name", "Color", "Price", "Quantity", "Product Page");
+            $tableTitle = "Product Data";
+            $sql = "SELECT productName, color, price, quantity, productPage
+            FROM product";
             $result = $conn->query($sql);
-            $record = $result->fetch_assoc();
-            //echo '$record: <pre>';
-            // print_r($record);
-            // echo '</pre>';
-            $thisRunner = $record['id_runner'];
-            //echo '$thisRunner: '. $thisRunner . '<br />';
+            displayTable($productHead, $tableTitle, $result);
 
-            // Determine id_race for Half Marathon
-            $sql = "SELECT id_race FROM race WHERE raceName='Half Marathon'";
+            //Display department table
+            $departmentHead = array("Department", "Department Manager");
+            $departmentTitle = "Department Data";
+            $sql = "SELECT departmentName, departmentManager FROM department";
             $result = $conn->query($sql);
-            $record = $result->fetch_assoc();
-            $thisRace = $record['id_race'];
-            //echo '$thisRace: ' . $thisRace . '<br />';
-            // Add each sample runner to the Marathon and Half Marathon
-            foreach($runnerArray as $runner) {
-                //echo "<strong>Adding $runner[0] $runner[1]</strong><br />";
-                buildRunnerRace($runner[0], $runner[1], "Marathon");
-                buildRunnerRace($runner[0], $runner[1], "Half Marathon");
-            }
+            //Display tables of data
+            displayTable($departmentHead, $departmentTitle, $result);
+
+            //Display manufacturer tables
+            $manufacturerArray = array("Manufacturer", "Website");
+            $manufacturerTitle = "Manufacturer Data";
+            $sql = "SELECT manufactureName, manufactureWebsite FROM manufacturer";
+            $result = $conn->query($sql);
+            displayTable($manufacturerArray, $manufacturerTitle, $result);
 
 
-            // Check to make sure runner hasn't already registered for this race
-            $sql = "SELECT id_race FROM runner_race WHERE id_race = " . $thisRace;
-            if ($result = $conn->query($sql)) {
-                //determine number of rows result set 
-                $row_count = $result->num_rows;
-                if($row_count > 0) {
-                      echo "Runner " . $thisRunner
-                      . " has already registered for race " 
-                      . $thisRace . "<br />";
-                } 
-                else { // Not a duplicate
-                    $sql = "INSERT INTO runner_race (id_runner, id_race, bibNumber, paid) 
-                        VALUES (" . $thisRunner . ", " . $thisRace . ", 1234, true)";
-                    runQuery($sql, "Insert " . $thisRunner . " and " . $thisRace, true);
-                } // end of if($row_count)
-            } // end if($result)
 
-            // Add in extra runners who aren't registered for a race yet.
-            $sql = "INSERT INTO runner (id_runner, fName, lName, gender,phone) "
-            . "VALUES (NULL, 'John', 'Watson', 'male', '5071237899')";
-            runQuery($sql, "New record insert John Watson", false);
-
-            $sql = "INSERT INTO runner (id_runner, fName, lName, gender,phone) "
-                . "VALUES (NULL, 'Sally', 'Johnson', 'female', '8121237800')";
-            runQuery($sql, "New record insert Sally Johnson", false);
-
-            $sql = "INSERT INTO runner (id_runner, fName, lName, gender,phone) "
-                . "VALUES (NULL, 'Paula', 'Radcliff', 'female', '8029881123')";
-            runQuery($sql, "New record insert Sally Johnson", false);
-
-
-            /***************************************************
-             * Display the tables
-            ***************************************************/
-            // Table:runner
-
-            // Table:race
-
-            // Table:sponsor
- 
-            // Close the database
-            $conn->close();
-
-
-            /*************************************************************
-             * buildRunnerRace( ) - Register runner for specific races
-             *                      using sample data.
-             * Sets up a table with two foreign keys 
-             * connecting Table:runner to Table:race
-             * Parameters:  $fName - runner's first name
-             *              $lName - runner's last name
-             *              $thisRace - register this runner to this race
-             **************************************************************/
+            //Create our database
             function createDatabase()
             {
                 global $conn;
-                // Create database if it doesn't exist
                 $sql = "CREATE DATABASE IF NOT EXISTS " . DATABASE_NAME;
-                runQuery($sql, "Creating " . DATABASE_NAME, false);
+                runQuery($sql, "Creating " . DATABASE_NAME, true);
 
-                // Select the database
+                //Select newly created database
                 $conn->select_db(DATABASE_NAME);
 
-                /*******************************
-                * Create the tables
-                *******************************/
-                // Create Table:runner
-                $sql = "CREATE TABLE IF NOT EXISTS runner (
-                    id_runner INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
-                    fName     VARCHAR(25) NOT NULL,
-                    lName     VARCHAR(25) NOT NULL,
-                    gender    VARCHAR(10),
-                    phone     VARCHAR(10)
-                    )";
-                runQuery($sql, "Creating runner ", false);
+                /*
+                 * Create tables 
+                 */
 
-                // Create Table:race
-                $sql = "CREATE TABLE IF NOT EXISTS race (
-                    id_race     INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
-                    raceName        VARCHAR(25) NOT NULL,
-                    entranceFee SMALLINT
+                //Create Table: Products
+                $sql = "CREATE TABLE IF NOT EXISTS product (
+                    productID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    productName VARCHAR(20) NOT NULL,
+                    color VARCHAR(20) NOT NULL,
+                    price decimal(18,2) NOT NULL,
+                    quantity INT,
+                    productPage VARCHAR(65),
+                    manufacturerID INT,
+                    departmentID INT
                     )";
-                runQuery($sql, "Table:race", false);
+                runQuery($sql, "Creating products... ", true);
 
-                // Create Table:runner_race if it doesn't exist
-                // One racer can run multiple races
-                $sql = "CREATE TABLE IF NOT EXISTS runner_race (
-                    id_runner INT(6),
-                    id_race   INT(6),
-                    bibNumber INT(6),
-                    paid      BOOLEAN
-                    )"; 
-                runQuery($sql, "Table:runner_race", false);
-
-                // Create Table:sponsor
-                $sql = "CREATE TABLE IF NOT EXISTS sponsor (
-                    id_sponsor      INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, 
-                    sponsorName     VARCHAR(50) NOT NULL,
-                    id_runner       INT(6)
+                //Create Table: department
+                $sql = "CREATE TABLE IF NOT EXISTS department (
+                    departmentID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    departmentName VARCHAR(15) NOT NULL,
+                    departmentManager VARCHAR(15)
                     )";
-                runQuery($sql, "Table:sponsor", false);
+                runQuery($sql, "Creating departments...", true);
+
+                //Create Table: manufacturer
+                $sql = "CREATE TABLE IF NOT EXISTS manufacturer (
+                    manufacturerID INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    manufactureName VARCHAR(20) NOT NULL,
+                    manufactureWebsite VARCHAR(65) NOT NULL,
+                    departmentID INT
+                )";
+                runQuery($sql, "Creating manufacturers...", true);
             }
 
-            function buildRunnerRace($fName, $lName, $thisRace) {
-                global $conn;
-   
-                // Populate Table:runner_race
-                // Determine id_runner
-                $sql = "SELECT id_runner FROM runner 
-                        WHERE fName='" . $fName 
-                        . "' AND lName='" . $lName . "'";
-                $result = $conn->query($sql);
-                $record = $result->fetch_assoc();
-                $runnerID = $record['id_runner'];
-                //echo '$thisRunner: ' . $thisRunner;
+            function populateTables()
+            {
+                /*
+                 * Populate tables
+                 */
 
-                // Determine id_race
-                $sql = "SELECT id_race FROM race WHERE raceName='" . $thisRace . "'";
-                $result = $conn->query($sql);
-                $record = $result->fetch_assoc();
-                $raceID = $record['id_race'];
-                //echo ' -- $raceID: ' . $raceID . '<br />';
+                 //Populate product table
+                $productArray = array(
+                    array("Bath Towel", "Black", 5.75, 75, "http://MyStore.com/bathtowel.php", 1, 1),
+                    array("Wash Cloth", "White", 0.99, 225, "http://MyStore.com/washcloth.php", 1, 1),
+                    array("Shower Curtain", "White", 11.99, 73, "http://MyStore.com/showercurtain.php", 2, 1),
+                    array("Pantry Organizer", "Clear", 3.99, 52, "http://MyStore.com/pantryorganizer.php", 2, 2),
+                    array("Storage Jar", "Clear", 5.99, 18, "http://MyStore.com/storagejar.php", 2, 2),
+                    array("Firm Pillow", "White", 12.99, 24, "http://MyStore.com/pillow.php", 1, 3),
+                    array("Comforter", "White", 34.99, 12, "http://MyStore.com/comforter.php", 3, 3),
+                    array("Rollaway Bed", "Black", 249.99, 3, "http://Mystore.com/rollaway.php", 3, 3)
 
-                // Check to make sure runner hasn't already registered for this race
-                $sql = "SELECT id_race FROM runner_race 
-                WHERE id_race = " . $raceID 
-                . " AND id_runner = " . $runnerID;
-                $result = $conn->query($sql);
+                );
+                foreach($productArray as $product)
+                {
+                    //echo $product[0] . " " . $product[1] . "<br />";
+                    $sql = "INSERT INTO product (productName, color, price, quantity, productPage, manufacturerID, departmentID) "
+                        . "VALUES ('" . $product[0] . "', '" 
+                        . $product[1] . "', '" 
+                        . $product[2] . "', '"
+                        . $product[3] . "', '"
+                        . $product[4] . "', '"
+                        . $product[5] . "', '"
+                        . $product[6] . "')";
+                    runQuery($sql, "Record inserted for: " . $product[1], false);
+                }
 
-                /* determine number of rows result set */
-                $row_count = $result->num_rows;
-                if($row_count > 0) {
-                    echo "Runner " . $thisRunner
-                    . " has already registered for race " 
-                    . $thisRace . "<br />";
-                } 
-                else { // Not a duplicate
-                    $sql = "INSERT INTO runner_race (id_runner, id_race, bibNumber, paid) 
-                         VALUES (" . $runnerID . ", " . $raceID . ", 1234, true)";
-                    runQuery($sql, "Insert " . $runnerID . " and " . $thisRace, false);
-                } // end if($result)
+                //Populate department tables
+                $departmentArray = array(
+                    array("Bath", "Michael"),
+                    array("Kitchen", "John"),
+                    array("Bedroom", "Liz"),
+                );
+                foreach($departmentArray as $department)
+                {
+                    //echo "Department: " . $department[0] . ", Manager: " . $department[1] . "<br />";
+                    $sql = "INSERT INTO department (departmentName, departmentManager) "
+                        . "VALUES ('" . $department[0] . "', '"
+                        . $department[1] . "')";
+                    runQuery($sql, "Record inserted for: " . $department[1], false);
+                }
 
-            } // end of buildRunnerRace( )
+                //Populate manufacturer table
+                $manufacturerArray = array(
+                    array("Cannon", "http://www.cannonhome.com/", 1),
+                    array("InterDesign", "http://www.interdesignusa.com/", 2),
+                    array("LinenSpa", "http://www.linenspa.com/", 3),
+                    array("Dell", "http://dell.com/", 4),
+                    array("Samsung", "http://samsung.com/", 5)
+                );
+                foreach($manufacturerArray as $manufacturer)
+                {
+                    //echo "Manufacturer: " . $manufacturer[0] . "<br />";
+                    $sql = "INSERT INTO manufacturer (manufactureName, manufactureWebsite, departmentID) "
+                        . " VALUES ('" . $manufacturer[0] . "', '" 
+                        . $manufacturer[1] . "', '"
+                        . $manufacturer[2] . "')";
+                    runQuery($sql, "Record inserted for: " . $manufacturer[1], false);
+                }
+            }
 
+            function displayTable($tableHead, $title, $result)
+            {
+                echo "<h2>".$title."</h2>";
+		        echo '<table>';
+		        echo '<tr>';
+                foreach($tableHead as $value)
+                {
+                    echo "<th>".$value."</th>";
+                }
+                while($row = $result->fetch_assoc()) {
+                    //print_r($row);
+                    //echo "<br />";
+                    echo "<tr>\n";
+                    // print data
+                    foreach($row as $key=>$value) {
+                    echo "<td>" . $value . "</td>\n";
+                    }
+                    echo "</tr>\n";
+                }
+                echo '</tr>';
+                echo "</table>";
+                echo '<br />';
+            }
 
-            /********************************************
-             * displayResult( ) - Execute a query and display the result
-             *    Parameters:  $rs - result set to display as 2D array
-            *                 $sql - SQL string used to display an error msg
-            ********************************************/
-            function displayResult($result, $sql) {
-
-            } // end of displayResult( )
-
-
-            /********************************************
-             * runQuery( ) - Execute a query and display message
-             *    Parameters:  $sql         -  SQL String to be executed.
-             *                 $msg         -  Text of message to display on success or error
-             *     ___$msg___ successful.    Error when: __$msg_____ using SQL: ___$sql____.
-             *                 $echoSuccess - boolean True=Display message on success
-             ********************************************/
             function runQuery($sql, $msg, $echoSuccess) {
                 global $conn;
-    
+         
                 // run the query
                 if ($conn->query($sql) === TRUE) {
-                    if($echoSuccess) {
-                        echo $msg . " successful.<br />";
-                    }
-                } 
-                else {
-                    echo "<strong>Error when: " . $msg . "</strong> using SQL: " . $sql . "<br />" . $conn->error;
-                }   
-            } // end of runQuery( ) 
-        ?>
+                   if($echoSuccess) {
+                      echo $msg . "<br />";
+                   }
+                 } 
+                 else {
+                     echo "<strong>Error when: " . $msg . "</strong> using SQL: " . $sql . "<br />" . $conn->error;
+                 }           
+             } // end of runQuery( ) 
 
+        ?>
     </body>
 </html>
